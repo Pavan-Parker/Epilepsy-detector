@@ -21,7 +21,7 @@ import threading
 import heapq
 
 import datetime as dt
-from pylive.pylive import live_plotter
+#from pylive.pylive import live_plotter
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import style
@@ -135,6 +135,15 @@ def getPersonwiseKeypoints(valid_pairs, invalid_pairs):
                     personwiseKeypoints = np.vstack([personwiseKeypoints, row])
     return personwiseKeypoints
 
+def live_plotter():
+    global detected_keypoints
+    global keypointsMapping
+    while True:
+        sleep(1)
+        print(detected_keypoints)
+        if(not (len(detected_keypoints))):
+            print({keypointsMapping[i]: detected_keypoints[i] for i in range(len(keypointsMapping))})
+
 
 fps = ""
 detectfps = ""
@@ -153,7 +162,7 @@ POSE_PAIRS = [[1,2], [1,5], [2,3], [3,4], [5,6], [6,7], [1,8], [8,9], [9,10], [1
 mapIdx = [[31,32], [39,40], [33,34], [35,36], [41,42], [43,44], [19,20], [21,22], [23,24], [25,26], [27,28], [29,30], [47,48], [49,50], [53,54], [51,52], [55,56], [37,38], [45,46]]
 colors = [[0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,100,255], [0,255,0], [255,200,100], [255,0,255], [0,255,0], [255,200,100], [255,0,255], [0,0,255], [255,0,0], [200,200,0], [255,0,0], [200,200,0], [0,0,0]]
 
-cap = cv2.VideoCapture(4)
+cap = cv2.VideoCapture(6)
 cap.set(cv2.CAP_PROP_FPS, 60)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, camera_width)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, camera_height)
@@ -193,10 +202,9 @@ h = inputs.shape[2] #368
 w = inputs.shape[3] #432
 threshold = 0.1
 nPoints = 18
-
+spawn= True
 try:
-
-    while True:
+   while True:
         t1 = time.perf_counter()
 
         ret, color_image = cap.read()
@@ -233,7 +241,7 @@ try:
                 keypoint_id += 1
 
             detected_keypoints.append(keypoints_with_id)
-            print({keypointsMapping[i]: detected_keypoints[i] for i in range(len(keypointsMapping))})
+
 
         frameClone = np.uint8(canvas.copy())
         for i in range(nPoints):
@@ -269,7 +277,10 @@ try:
         t2 = time.perf_counter()
         elapsedTime = t2-t1
         time1 += 1/elapsedTime
-
+        if(spawn):
+            p=mp.Process(target=live_plotter,args=(),daemon=True)
+            p.start(  )
+            spawn=False
 except:
     import traceback
     traceback.print_exc()
