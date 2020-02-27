@@ -233,7 +233,7 @@ try:
                 keypoint_id += 1
 
             detected_keypoints.append(keypoints_with_id)
-
+            print(detected_keypoints)
         frameClone = np.uint8(canvas.copy())
         for i in range(nPoints):
             for j in range(len(detected_keypoints[i])):

@@ -401,7 +401,6 @@ def inferencer(device, model_xml, results, frameBuffer, number_of_ncs, camera_wi
 def liveGraph(qNice):
    
     while True:
-        # Read temperature (Celsius) from TMP102
         
         qNiceNow=qNice.get()
         requiredPoints=['R-Sho', 'R-Elb', 'R-Wr', 'L-Sho', 'L-Elb', 'L-Wr',  'R-Knee', 'R-Ank', 'L-Knee', 'L-Ank', 'R-Eye', 'L-Eye']
