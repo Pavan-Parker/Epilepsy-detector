@@ -168,7 +168,7 @@ def camThread(results, frameBuffer, camera_width, camera_height, vidfps, nPoints
     global cam
     global window_name
 
-    cam = cv2.VideoCapture(6)
+    cam = cv2.VideoCapture(4)
     if cam.isOpened() != True:
         print("USB Camera Open Error!!!")
         sys.exit(0)
