@@ -136,14 +136,32 @@ def getPersonwiseKeypoints(valid_pairs, invalid_pairs):
     return personwiseKeypoints
 
 def live_plotter():
-    global detected_keypoints
     global keypointsMapping
+    global detected_keypoints
+    global standards
+    global newStandards
+    requiredKeypoints=['Nose','Neck','R-Sho','L-Sho','R-Elb','L-Elb']
     while True:
         sleep(1)
-        print(detected_keypoints)
-        if(not (len(detected_keypoints))):
-            print({keypointsMapping[i]: detected_keypoints[i] for i in range(len(keypointsMapping))})
+        if((len(detected_keypoints)==18) ):
+          pointsDict={keypointsMapping[i]: detected_keypoints[i] for i in range(len(keypointsMapping))}
+          print("==============================================================================")
+          print(dt.datetime.now().strftime("%M:%S"))
+          requiredDict={requiredKeypoints[i]:pointsDict[requiredKeypoints[i]] for i in range(len(requiredKeypoints))}
+          if(newStandards): 
+            standards=detected_keypoints
+            standardDict=requiredDict
+            newStandards=False
+          for i in range(len(requiredKeypoints)):
+            keyPoint=requiredKeypoints[i]
+            try:
+                offset=(requiredDict[keyPoint])[-1][0] - (standardDict[keyPoint])[-1][0]
+                if(offset>0): print(keyPoint,": LEFT" , end = ' , ')
+                if(offset<0): print(keyPoint,": RIGHT" , end = ' , ')
+            except IndexError:
+                print(keyPoint,": not detected", end=' , ' )
 
+        print("")
 
 fps = ""
 detectfps = ""
@@ -203,6 +221,9 @@ w = inputs.shape[3] #432
 threshold = 0.1
 nPoints = 18
 spawn= True
+standards=[]
+newStandards= True
+
 try:
    while True:
         t1 = time.perf_counter()
@@ -242,7 +263,6 @@ try:
 
             detected_keypoints.append(keypoints_with_id)
 
-
         frameClone = np.uint8(canvas.copy())
         for i in range(nPoints):
             for j in range(len(detected_keypoints[i])):
@@ -265,8 +285,13 @@ try:
         cv2.namedWindow("USB Camera", cv2.WINDOW_AUTOSIZE)
         cv2.imshow("USB Camera" , frameClone)
 
-        if cv2.waitKey(1)&0xFF == ord('q'):
+        key=cv2.waitKey(1)
+        if key&0xFF == ord('q'):
             break
+        if key == 13:
+            newStandards=True
+            print("CAPTURED!")
+
 
         # FPS calculation
         framecount += 1
@@ -278,8 +303,8 @@ try:
         elapsedTime = t2-t1
         time1 += 1/elapsedTime
         if(spawn):
-            p=mp.Process(target=live_plotter,args=(),daemon=True)
-            p.start(  )
+            p=threading.Thread(target=live_plotter,args=(),daemon=True)
+            p.start()
             spawn=False
 except:
     import traceback
