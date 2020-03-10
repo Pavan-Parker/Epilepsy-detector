@@ -1,7 +1,6 @@
 import sys
 import os
 import numpy as np
-import cv2
 from os import system
 import io
 import time
@@ -10,6 +9,7 @@ from os.path import join
 import re
 import argparse
 import platform
+
 try:
     from armv7l.openvino.inference_engine import IENetwork, IEPlugin
 except:
@@ -19,6 +19,7 @@ import multiprocessing as mp
 from time import sleep
 import threading
 import heapq
+import math
 
 import datetime as dt
 #from pylive.pylive import live_plotter
@@ -26,6 +27,9 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import style
 ###########################
+
+import cv2
+
 
 def getKeypoints(probMap, threshold=0.1):
 
@@ -135,33 +139,69 @@ def getPersonwiseKeypoints(valid_pairs, invalid_pairs):
                     personwiseKeypoints = np.vstack([personwiseKeypoints, row])
     return personwiseKeypoints
 
+def getAngle(a, b, c):
+    ang = math.degrees(math.atan2(c[1]-b[1], c[0]-b[0]) - math.atan2(a[1]-b[1], a[0]-b[0]))
+    return ang + 360 if ang < 0 else ang
+ 
 def live_plotter():
     global keypointsMapping
     global detected_keypoints
     global standards
     global newStandards
     requiredKeypoints=['Nose','Neck','R-Sho','L-Sho','R-Elb','L-Elb']
+    tiltPredictions=[[2,1,0],[3,1,0],[1,2,4],[1,3,5]]
+    tiltCombs=["Head-Tilt","Head-Tilt","Right-Hand-Tilt","Left-Hand-Tilt"]
+    tiltResults=[]
     while True:
         sleep(1)
         if((len(detected_keypoints)==18) ):
-          pointsDict={keypointsMapping[i]: detected_keypoints[i] for i in range(len(keypointsMapping))}
-          print("==============================================================================")
-          print(dt.datetime.now().strftime("%M:%S"))
-          requiredDict={requiredKeypoints[i]:pointsDict[requiredKeypoints[i]] for i in range(len(requiredKeypoints))}
-          if(newStandards): 
-            standards=detected_keypoints
-            standardDict=requiredDict
-            newStandards=False
-          for i in range(len(requiredKeypoints)):
-            keyPoint=requiredKeypoints[i]
-            try:
-                offset=(requiredDict[keyPoint])[-1][0] - (standardDict[keyPoint])[-1][0]
-                if(offset>0): print(keyPoint,": LEFT" , end = ' , ')
-                if(offset<0): print(keyPoint,": RIGHT" , end = ' , ')
-            except IndexError:
-                print(keyPoint,": not detected", end=' , ' )
+            pointsDict={keypointsMapping[i]: detected_keypoints[i] for i in range(len(keypointsMapping))}
+            print("==========================================")
+            print("TIME : ",dt.datetime.now().strftime("%M:%S"))
+            requiredDict={requiredKeypoints[i]:pointsDict[requiredKeypoints[i]] for i in range(len(requiredKeypoints))}
+            if(newStandards): 
+                standards=detected_keypoints
+                standardDict=requiredDict
+                newStandards=False
+            for i in range(len(requiredKeypoints)):
+                keyPoint=requiredKeypoints[i]
+                try:
+                    offset=(requiredDict[keyPoint])[-1][0] - (standardDict[keyPoint])[-1][0]
+                    if(offset>0): print(keyPoint,"-Pos",": LEFT", offset)
+                    if(offset<0): print(keyPoint,"-Pos",": RIGHT", offset )
+                except IndexError:
+                    print(keyPoint,"-Pos",": not detected" )
+            print("")
 
-        print("")
+            right_good=False
+
+            for i in range(len(tiltPredictions)):
+                
+                try:
+                    if(i<2):
+                        if(not(i==1 and right_good)):
+                            angle=getAngle((requiredDict[requiredKeypoints[(tiltPredictions[i])[0]]])[-1][0:2],(requiredDict[requiredKeypoints[(tiltPredictions[i])[1]]])[-1][0:2],(requiredDict[requiredKeypoints[(tiltPredictions[i])[2]]])[-1][0:2])
+                            if(i%2!=0):angle=360-angle
+                            if(i==1): angle=180-angle
+                            print(tiltCombs[i]," : ","Right" if angle<90 else "Left")
+                            if(i==0): right_good=True
+                    else:
+                        angle=getAngle((requiredDict[requiredKeypoints[(tiltPredictions[i])[0]]])[-1][0:2],(requiredDict[requiredKeypoints[(tiltPredictions[i])[1]]])[-1][0:2],(requiredDict[requiredKeypoints[(tiltPredictions[i])[2]]])[-1][0:2])
+                        if(i==3):angle=360-angle
+                        if(angle<85):
+                            pos="CROSS"
+                        if(angle>85 and angle<110):
+                            pos="NORMAL"
+                        if(angle>110):
+                            pos="OPEN"
+                        print(tiltCombs[i]," : ",pos ,angle )
+                        pos="NORMAL"
+                except IndexError:
+
+                    print(tiltCombs[i]," : no tilt detected" )
+            
+
+            print("")
 
 fps = ""
 detectfps = ""
@@ -169,7 +209,7 @@ framecount = 0
 time1 = 0
 
 camera_width = 160
-camera_height = 120
+camera_height = 240
 ###################
 lastresults= None
 nice= None
