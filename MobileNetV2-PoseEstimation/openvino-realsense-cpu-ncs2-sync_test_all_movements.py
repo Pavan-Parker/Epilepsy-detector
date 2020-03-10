@@ -157,7 +157,7 @@ def live_plotter():
         if((len(detected_keypoints)==18) ):
             pointsDict={keypointsMapping[i]: detected_keypoints[i] for i in range(len(keypointsMapping))}
             print("==========================================")
-            print("TIME : ",dt.datetime.now().strftime("%M:%S"))
+            print("TIME : ",dt.datetime.now().strftime("%H:%M:%S"))
             requiredDict={requiredKeypoints[i]:pointsDict[requiredKeypoints[i]] for i in range(len(requiredKeypoints))}
             if(newStandards): 
                 standards=detected_keypoints
@@ -183,7 +183,7 @@ def live_plotter():
                             angle=getAngle((requiredDict[requiredKeypoints[(tiltPredictions[i])[0]]])[-1][0:2],(requiredDict[requiredKeypoints[(tiltPredictions[i])[1]]])[-1][0:2],(requiredDict[requiredKeypoints[(tiltPredictions[i])[2]]])[-1][0:2])
                             if(i%2!=0):angle=360-angle
                             if(i==1): angle=180-angle
-                            print(tiltCombs[i]," : ","Right" if angle<90 else "Left")
+                            print(tiltCombs[i]," : ","Right" if angle<90 else "Left" , int(angle))
                             if(i==0): right_good=True
                     else:
                         angle=getAngle((requiredDict[requiredKeypoints[(tiltPredictions[i])[0]]])[-1][0:2],(requiredDict[requiredKeypoints[(tiltPredictions[i])[1]]])[-1][0:2],(requiredDict[requiredKeypoints[(tiltPredictions[i])[2]]])[-1][0:2])
@@ -194,7 +194,7 @@ def live_plotter():
                             pos="NORMAL"
                         if(angle>110):
                             pos="OPEN"
-                        print(tiltCombs[i]," : ",pos ,angle )
+                        print(tiltCombs[i]," : ",pos ,int(angle) )
                         pos="NORMAL"
                 except IndexError:
 
